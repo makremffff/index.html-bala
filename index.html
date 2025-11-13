@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>LED Counter – Watch & Earn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <link href="https://fonts.googleapis.com/css2?family=Digital-7&family=Poppins:wght@600&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{height:100%;font-family:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}
+    .iphone{width:100%;height:100%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .screen{width:93.5%;max-width:437px;aspect-ratio:1/1.86;background:linear-gradient(135deg,#f5f5f5 0%,#e1e1e1 100%);border-radius:36px;border:3px solid #8b0000;box-shadow:0 0 0 6px #8b000030,0 0 15px 4px #8b000050;display:flex;flex-direction:column;position:relative;padding:8px}
+    .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:24px;background:#000;border-radius:0 0 18px 18px;z-index:10}
+    .user-photo{width:32px;height:32px;border-radius:50%;object-fit:cover;position:absolute;top:6px;left:6px;z-index:11;border:2px solid #fff}
+    .status-bar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:#000;font-size:13px;font-weight:500}
+    .status-bar .time{font-weight:600}.status-bar .icons span{margin-left:4px}
+    .led-bar{display:flex;justify-content:space-between;align-items:center;padding:6px 16px 8px;font-size:14px;font-weight:600;color:#000}
+    .led-box{background:#111;border-radius:8px;padding:4px 8px;box-shadow:inset 0 0 4px rgba(0,0,0,.6)}
+    .led-num{font-family:'Digital-7',monospace;font-size:18px;font-weight:400;color:#00ff41;text-shadow:0 0 2px #00ff41,0 0 4px #00ff41}
+    .led-usdt .led-num{color:#ffa500;text-shadow:0 0 2px #ffa500,0 0 4px #ffa500}
+    .btn-bar{margin-top:auto;display:flex;justify-content:space-evenly;padding:8px 4px 12px;gap:6px}
+    .cartoon-btn{flex:1 1 0;aspect-ratio:1/1;border:none;border-radius:14px;background:#000;color:#fff;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;top:0;box-shadow:0 6px 0 #444,0 8px 8px rgba(0,0,0,.25);transition:all .1s ease;user-select:none;text-align:center;line-height:1.1}
+    .cartoon-btn:active{top:4px;box-shadow:0 2px 0 #444,0 3px 4px rgba(0,0,0,.25)}
+    .badge{position:absolute;top:-6px;right:-6px;background:#8b0000;color:#fff;font-size:11px;border-radius:10px;padding:3px 6px;min-width:18px;text-align:center}
+    .panel{display:none;flex-direction:column;padding:24px;gap:16px;text-align:center;color:#000}
+    .panel input,.panel button{padding:10px;font-size:14px;border-radius:8px;border:none}
+    .panel input{background:#eee;color:#000}
+    .panel button{background:#8b0000;color:#fff;font-weight:600;cursor:pointer}
+    .panel button:active{transform:translateY(2px)}
+    .panel .back{margin-top:auto;margin-bottom:20px;width:120px}
+  </style>
+</head>
+<body>
+<div class="iphone">
+  <div class="screen">
+    <img id="userPhoto" class="user-photo" style="display:none"/>
+    <div class="notch"></div>
+
+    <!-- Main UI -->
+    <div id="mainUI" style="width:100%;height:100%;display:flex;flex-direction:column">
+      <div class="status-bar">
+        <span class="time">9:41</span>
+        <span class="icons"><span>📶</span><span>🔋</span></span>
+      </div>
+      <div class="led-bar">
+        <span>USDT</span>
+        <div class="led-box led-usdt"><span class="led-num" id="usdtVal">0.00</span></div>
+        <div class="led-box"><span class="led-num" id="pointsVal">0</span></div>
+        <span>Points</span>
+      </div>
+      <div class="btn-bar">
+        <button class="cartoon-btn" onclick="showPanel('taskPanel')">Task</button>
+        <button class="cartoon-btn" onclick="showPanel('swapPanel')">Swap</button>
+        <button class="cartoon-btn" onclick="showPanel('withdrawPanel')">Withdraw</button>
+        <button class="cartoon-btn" id="watchBtn">
+          Watch
+          <span class="badge" id="watchBadge">15</span>
+        </button>
+        <button class="cartoon-btn" id="copyBtn">Copy</button>
+      </div>
+    </div>
+
+    <!-- Swap Panel -->
+    <div id="swapPanel" class="panel">
+      <h3>Swap Points to USDT</h3>
+      <p>100,000 Points = 0.01 USDT</p>
+      <input type="number" id="swapInput" placeholder="Enter points (min 100k)" min="100000" step="100000">
+      <button onclick="handleSwap()">Swap</button>
+      <button class="back" onclick="showMain()">Back</button>
+    </div>
+
+    <!-- Withdraw Panel -->
+    <div id="withdrawPanel" class="panel">
+      <h3>Withdraw USDT</h3>
+      <input type="text" id="binanceId" placeholder="Binance User ID">
+      <input type="number" id="withdrawAmount" placeholder="Amount (min 0.03)" min="0.03" step="0.01">
+      <button onclick="handleWithdraw()">Withdraw</button>
+      <button class="back" onclick="showMain()">Back</button>
+    </div>
+
+    <!-- Task Panel -->
+    <div id="taskPanel" class="panel">
+      <h3>Tasks</h3>
+      <div style="text-align:left;font-size:14px">
+        <p>🔹 Join Channel: <b>0.01 USDT</b> <button onclick="completeTask('channel')">Claim</button></p>
+        <p>🔹 Watch 250 Ads: <b>0.02 USDT</b> <button onclick="completeTask('ads')">Claim</button></p>
+      </div>
+      <button class="back" onclick="showMain()">Back</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+  /***********************  index.js  *************************/
+  const BOT_USERNAME = 'Game_win_usdtBot';
+
+  const $ = id => document.getElementById(id);
+  const mainUI = $('mainUI');
+
+  window.Telegram.WebApp.ready();
+  const initData = window.Telegram.WebApp.initDataUnsafe;
+  if (!initData?.user) {
+    document.body.innerHTML = '<h2 style="text-align:center;margin-top:40px;">Please open this mini-app from Telegram.</h2>';
+    throw new Error('User not authenticated');
+  }
+  const user = initData.user;
+
+  // دالة موحدة للـAPI
+  async function api(action, params = {}) {
+    const res = await fetch(`/api.js?action=${action}&userID=${user.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
+    return res.json();
+  }
+
+  // حالة العداد والكول داون (محلي فقط)
+  const LS_KEY = `st_${user.id}`;
+  let counter = 15, cooldown = 0;
+  function loadState() {
+    try { const s = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); counter = s.counter ?? 15; cooldown = s.cooldown ?? 0; } catch {}
+  }
+  function saveState() { localStorage.setItem(LS_KEY, JSON.stringify({ counter, cooldown })); }
+
+  // تسجيل المستخدم
+  async function registerUser() {
+    const ref = new URLSearchParams(window.location.search).get('startapp')?.replace('ref_', '') || null;
+    await api('registerUser', {
+      firstName: user.first_name || '',
+      lastName: user.last_name || '',
+      username: user.username || '',
+      photoURL: user.photo_url || '',
+      ref
+    });
+  }
+
+  // جلب البيانات
+  async function loadProfile() {
+    const { success, data } = await api('getProfile');
+    if (success) {
+      $('#pointsVal').textContent = data.points.toLocaleString();
+      $('#usdtVal').textContent = parseFloat(data.usdt).toFixed(2);
+      $('#refCount').textContent = data.referrals;
+    }
+  }
+
+  // عرض اللوحات
+  function showPanel(id) {
+    mainUI.style.display = 'none';
+    document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+    $(id).style.display = 'flex';
+  }
+  function showMain() {
+    document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+    mainUI.style.display = 'flex';
+  }
+
+  // Swap
+  async function handleSwap() {
+    const input = parseInt($('swapInput').value);
+    if (isNaN(input) || input < 100000 || input % 100000 !== 0) return alert('Minimum 100,000 and multiples only');
+    const { success, message } = await api('swap', { points: input });
+    alert(success ? 'Swapped successfully!' : message);
+    $('swapInput').value = '';
+    await loadProfile();
+  }
+
+  // Withdraw
+  async function handleWithdraw() {
+    const binanceId = $('binanceId').value.trim();
+    const amount = parseFloat($('withdrawAmount').value);
+    if (!binanceId) return alert('Enter Binance ID');
+    if (isNaN(amount) || amount < 0.03) return alert('Minimum 0.03 USDT');
+    const { success, message } = await api('withdraw', { binanceId, amount });
+    alert(success ? `Withdrawal request sent!\nBinance ID: ${binanceId}\nAmount: ${amount.toFixed(2)} USDT` : message);
+    $('binanceId').value = '';
+    $('withdrawAmount').value = '';
+    await loadProfile();
+  }
+
+  // Tasks
+  async function completeTask(type) {
+    const { success, message } = await api('completeTask', { type });
+    alert(success ? 'Task completed!' : message);
+    await loadProfile();
+  }
+
+  // Watch Ad
+  $('#watchBtn').addEventListener('click', async () => {
+    if (cooldown > 0) return;
+    if (counter <= 0) {
+      cooldown = 3600;
+      saveState();
+      startCooldown();
+      return;
+    }
+    const { success } = await api('watchAd');
+    if (success) { counter--; saveState(); await loadProfile(); updateWatchBtn(); }
+  });
+
+  // Copy referral
+  $('#copyBtn').addEventListener('click', () => {
+    const link = `https://t.me/${BOT_USERNAME}/earn?startapp=ref_${user.id}`;
+    navigator.clipboard.writeText(link).then(() => alert('Referral link copied!'));
+  });
+
+  // عداد التبريد
+  function startCooldown() {
+    const iv = setInterval(() => {
+      cooldown = Math.max(0, cooldown - 1);
+      saveState();
+      updateWatchBtn();
+      if (cooldown === 0) { clearInterval(iv); counter = 15; saveState(); updateWatchBtn(); }
+    }, 1000);
+  }
+  function fmtMMSS(s) { const m = Math.floor(s / 60); return `${m}:${(s % 60).toString().padStart(2, '0')}`; }
+  function updateWatchBtn() {
+    const btn = $('#watchBtn'); const badge = $('#watchBadge');
+    btn.disabled = cooldown > 0;
+    badge.textContent = cooldown > 0 ? fmtMMSS(cooldown) : counter;
+  }
+
+  // تهيئة أولية
+  (async () => {
+    loadState();
+    await registerUser();
+    await loadProfile();
+    updateWatchBtn();
+    if (cooldown > 0) startCooldown();
+  })();
+
+  // الساعة
+  function updateTime() {
+    const now = new Date();
+    document.querySelector('.time').textContent = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  }
+  updateTime(); setInterval(updateTime, 1000);
+</script>
+</body>
+</html>
